@@ -32,6 +32,14 @@ module EventTracker
     def mixpanel_alias(identity)
       session[:mixpanel_alias] = identity
     end
+
+    def add_transaction(id, affiliation, revenue, shipping, tax)
+      (session[:add_transaction_queue] ||= []) << [id, affiliation, revenue, shipping, tax]
+    end
+
+    def add_item(id, name, sku, category, price, quantity)
+      (session[:add_item_queue] ||= []) << [id, name, sku, category, price, quantity]
+    end
   end
 
   module ActionControllerExtension
@@ -121,6 +129,22 @@ module EventTracker
           end
         end
       end
+
+      add_transaction_queue = session.delete(:add_transaction_queue)
+      if add_transaction_queue.present?
+        add_transaction_queue.each do |id, affiliation, revenue, shipping, tax|
+          a << google_analytics_tracker.add_transaction(id, affiliation, revenue, shipping, tax)
+      end
+      end
+
+      add_item_queue = session.delete(:add_item_queue)
+      if add_item_queue.present?
+        add_item_queue.each do |id, name, sku, category, price, quantity|
+          a << google_analytics_tracker.add_item(id, name, sku, category, price, quantity)
+        end
+      end
+
+      a << %Q{ga('event_tracker.ecommerce:send');} if google_analytics_tracker.present?
 
       body.insert body_insert_at, view_context.javascript_tag(a.join("\n"))
       response.body = body
