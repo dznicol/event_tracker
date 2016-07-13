@@ -22,25 +22,25 @@ class EventTracker::GoogleAnalytics
 
   def add_transaction(id, affiliation, revenue, shipping, tax)
     if tax
-      %Q{ga('event_tracker.ecommerce:addTransaction', '#{id}', '#{affiliation}', '#{revenue}', '#{shipping}', '#{tax}');}
+      %Q[ga('event_tracker.ecommerce:addTransaction', { 'id': '#{id}', 'affiliation': '#{affiliation}', 'revenue': '#{revenue}', 'shipping': '#{shipping}', 'tax': '#{tax}' });]
     elsif shipping
-      %Q{ga('event_tracker.ecommerce:addTransaction', '#{id}', '#{affiliation}', '#{revenue}', '#{shipping}');}
+      %Q[ga('event_tracker.ecommerce:addTransaction', { 'id': '#{id}', 'affiliation': '#{affiliation}', 'revenue': '#{revenue}', 'shipping': '#{shipping}' });]
     elsif revenue
-      %Q{ga('event_tracker.ecommerce:addTransaction', '#{id}', '#{affiliation}', '#{revenue}');}
+      %Q[ga('event_tracker.ecommerce:addTransaction', { 'id': '#{id}', 'affiliation': '#{affiliation}', 'revenue': '#{revenue}' });]
     else
-      %Q{ga('event_tracker.ecommerce:addTransaction', '#{id}', '#{affiliation}');}
+      %Q[ga('event_tracker.ecommerce:addTransaction', { 'id': '#{id}', 'affiliation': '#{affiliation}' });]
     end
   end
 
   def add_item(id, name, sku, category, price, quantity)
     if quantity
-      %Q{ga('event_tracker.ecommerce:addItem', '#{id}', '#{name}', '#{sku}', '#{category}', '#{price}', '#{quantity}');}
+      %Q[ga('event_tracker.ecommerce:addItem', { 'id': '#{id}', 'name': '#{name}', 'sku': '#{sku}', 'category': '#{category}', 'price': '#{price}', 'quantity': '#{quantity}' });]
     elsif price
-      %Q{ga('event_tracker.ecommerce:addItem', '#{id}', '#{name}', '#{sku}', '#{category}', '#{price}');}
+      %Q[ga('event_tracker.ecommerce:addItem', { 'id': '#{id}', 'name': '#{name}', 'sku': '#{sku}', 'category': '#{category}', 'price': '#{price}' });]
     elsif category
-      %Q{ga('event_tracker.ecommerce:addItem', '#{id}', '#{name}', '#{sku}', '#{category}');}
+      %Q[ga('event_tracker.ecommerce:addItem', { 'id': '#{id}', 'name': '#{name}', 'sku': '#{sku}', 'category': '#{category}' });]
     elsif sku
-      %Q{ga('event_tracker.ecommerce:addItem', '#{id}', '#{name}', '#{sku}');}
+      %Q[ga('event_tracker.ecommerce:addItem', { 'id': '#{id}', 'name': '#{name}', 'sku': '#{sku}' });]
     end
   end
 end
