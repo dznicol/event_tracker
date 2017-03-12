@@ -1,8 +1,4 @@
-class EventTracker::Kissmetrics
-  def initialize(key)
-    @key = key
-  end
-
+class EventTracker::Integration::Kissmetrics < EventTracker::Integration::Base
   def init
     <<-EOD
       var _kmq = _kmq || [];
@@ -21,11 +17,11 @@ class EventTracker::Kissmetrics
   end
 
   def register(registered_properties)
-    %Q{_kmq.push(['set', #{registered_properties.to_json}]);}
+    %Q{_kmq.push(['set', #{embeddable_json(registered_properties)}]);}
   end
 
   def track(event_name, properties)
-    p = properties.empty? ? "" : ", #{properties.to_json}"
+    p = properties.empty? ? "" : ", #{embeddable_json(properties)}"
     %Q{_kmq.push(['record', '#{event_name}'#{p}]);}
   end
 

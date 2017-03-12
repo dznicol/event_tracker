@@ -1,7 +1,7 @@
 require "spec_helper"
 
 shared_examples_for "init" do
-  subject { page.find("head script").native.content }
+  subject { page.find("head script", visible: false).native.content }
   it { should include('mixpanel.init("YOUR_TOKEN")') }
   it { should include(%q{var _kmk = _kmk || 'KISSMETRICS_KEY'}) }
   it { should include(%q{ga('create', 'GOOGLE_ANALYTICS_KEY', 'auto', {'name': 'event_tracker'});}) }
@@ -29,7 +29,7 @@ shared_examples_for "with event" do
 end
 
 feature 'basic integration' do
-  subject { page.find("body script").native.content }
+  subject { page.find("body script", visible: false).native.content }
 
   class BasicController < ApplicationController
     around_filter :append_event_tracking_tags
@@ -94,16 +94,16 @@ feature 'basic integration' do
     def index
       register_properties age: 19
       register_properties gender: "female"
-      track_event "Take an action", property1: "a", property2: 1
+      track_event "Take an action", property1: "a", property2: 1, xss: "</script>"
       render inline: "OK", layout: true
     end
   end
 
   context "track event with properties" do
     background { visit "/with_properties" }
-    it { should include %Q{mixpanel.track("Take an action", {"property1":"a","property2":1})} }
+    it { should include %q{mixpanel.track("Take an action", {"property1":"a","property2":1,"xss":"\u003c/script\u003e"})} }
     it { should include %Q{mixpanel.register({"age":19,"gender":"female"})} }
-    it { should include %Q{_kmq.push(['record', 'Take an action', {"property1":"a","property2":1}])} }
+    it { should include %q{_kmq.push(['record', 'Take an action', {"property1":"a","property2":1,"xss":"\u003c/script\u003e"}])} }
     it { should include %Q{_kmq.push(['set', {"age":19,"gender":"female"}])} }
   end
 
@@ -226,23 +226,35 @@ feature 'basic integration' do
     it { should include %Q{mixpanel.alias("jsmith@example.com")} }
   end
 
-  context "halting filter chain in a before_filter" do
-    background { visit "/before_filter" }
-    it_should_behave_like "init"
-  end
-
   class BeforeFilterController < ApplicationController
     around_filter :append_event_tracking_tags
     before_filter :halt_the_chain_and_render
 
     def index
-      render inline: "OK", layout: true
+      render inline: "ORIGINAL", layout: true
     end
 
     def halt_the_chain_and_render
-      render inline: "OK", layout: true and return
+      render inline: "HALTED", layout: true
     end
 
   end
 
+  context "halting filter chain in a before_filter" do
+    background { visit "/before_filter" }
+    it_should_behave_like "init"
+    it { expect(page.body).to_not include("ORIGINAL") }
+    it { expect(page.body).to include("HALTED") }
+  end
+
+  if Rails.version >= "5"
+    class ApiController < ActionController::API
+      def index
+        head :ok
+      end
+    end
+
+    background { visit "/api" }
+    it { expect(page).to have_http_status(:ok) }
+  end
 end
