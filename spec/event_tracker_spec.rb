@@ -5,6 +5,7 @@ shared_examples_for "init" do
   it { should include('mixpanel.init("YOUR_TOKEN")') }
   it { should include(%q{var _kmk = _kmk || 'KISSMETRICS_KEY'}) }
   it { should include(%q{ga('create', 'GOOGLE_ANALYTICS_KEY', 'auto', {'name': 'event_tracker'});}) }
+  it { should include('analytics.load("SEGMENT_KEY")') }
 end
 
 shared_examples_for "without distinct id" do
@@ -256,5 +257,129 @@ feature 'basic integration' do
 
     background { visit "/api" }
     it { expect(page).to have_http_status(:ok) }
+  end
+
+  #
+  # Segment Tests
+  #
+  class SegmentTrackController < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_track 'Article Completed', title: 'How to Create a Tracking Plan', course: 'Intro to Analytics'
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment_track" do
+    background { visit "/segment_track" }
+    it { should include %Q{analytics.track("Article Completed", {"title":"How to Create a Tracking Plan","course":"Intro to Analytics"})} }
+  end
+
+  class SegmentIdentify1Controller < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_identify nil, nickname: 'Amazing Grace', favoriteCompiler: 'A-0', industry: 'Computer Science'
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment_identify without user_id" do
+    background { visit "/segment_identify1" }
+    it { should include %Q{analytics.identify({"nickname":"Amazing Grace","favoriteCompiler":"A-0","industry":"Computer Science"})} }
+  end
+
+  class SegmentIdentify2Controller < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_identify '12091906-01011992', name: 'Grace Hopper', email: 'grace@usnavy.gov'
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment_identify with user_id" do
+    background { visit "/segment_identify2" }
+    it { should include %Q{analytics.identify("12091906-01011992", {"name":"Grace Hopper","email":"grace@usnavy.gov"})} }
+  end
+
+  class SegmentGroupController < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_group 'UNIVAC Working Group', principles: ['Eckert', 'Mauchly'], site: 'Eckert–Mauchly Computer Corporation', statedGoals: 'Develop the first commercial computer', industry: 'Technology'
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment group" do
+    background { visit "/segment_group" }
+    it { should include %Q{analytics.group("UNIVAC Working Group", {"principles":["Eckert","Mauchly"],"site":"Eckert–Mauchly Computer Corporation","statedGoals":"Develop the first commercial computer","industry":"Technology"});} }
+  end
+
+  class SegmentPage1Controller < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_page nil, 'Pricing'
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment page1" do
+    background { visit "/segment_page1" }
+    it { should include %Q{analytics.page("Pricing")} }
+  end
+
+  class SegmentPage2Controller < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_page nil, 'Pricing', {
+          title: 'Segment Pricing',
+          url: 'https://segment.com/pricing',
+          path: '/pricing',
+          referrer: 'https://segment.com/warehouses' }
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment page2" do
+    background { visit "/segment_page2" }
+    it { should include %Q{analytics.page("Pricing", {"title":"Segment Pricing","url":"https://segment.com/pricing","path":"/pricing","referrer":"https://segment.com/warehouses"});} }
+  end
+
+  class SegmentGroupController < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_group 'UNIVAC Working Group', {
+          principles: ['Eckert', 'Mauchly'],
+          site: 'Eckert–Mauchly Computer Corporation',
+          statedGoals: 'Develop the first commercial computer',
+          industry: 'Technology'
+      }
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment group" do
+    background { visit "/segment_group" }
+    it { should include %Q{analytics.group("UNIVAC Working Group", {"principles":["Eckert","Mauchly"],"site":"Eckert–Mauchly Computer Corporation","statedGoals":"Develop the first commercial computer","industry":"Technology"});} }
+  end
+
+  class SegmentAliasController < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_alias "507f191e81"
+      render inline: "OK", layout: true
+    end
+  end
+
+  context "segment alias" do
+    background { visit "/segment_alias" }
+    it { should include %Q{analytics.alias("507f191e81");} }
   end
 end

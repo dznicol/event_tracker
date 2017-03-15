@@ -4,6 +4,7 @@ require "event_tracker/integration/base"
 require "event_tracker/integration/mixpanel"
 require "event_tracker/integration/kissmetrics"
 require "event_tracker/integration/google_analytics"
+require "event_tracker/integration/segment"
 
 module EventTracker
   module HelperMethods
@@ -42,6 +43,27 @@ module EventTracker
     def add_item(id, name, sku, category, price, quantity)
       (session[:add_item_queue] ||= []) << [id, name, sku, category, price, quantity]
     end
+
+    def segment_track(event, args = {})
+      puts ">>> #{event} #{args}"
+      (session[:segment_queue] ||= []) << [:track, event, args]
+    end
+
+    def segment_identify(user_id, args = {})
+      (session[:segment_queue] ||= []) << [:identify, user_id, args]
+    end
+
+    def segment_group(group_id, args = {})
+      (session[:segment_queue] ||= []) << [:group, group_id, args]
+    end
+
+    def segment_page(category=nil, name=nil, properties={}, options={})
+      (session[:segment_queue] ||= []) << [:page, category, name, properties, options]
+    end
+
+    def segment_alias(user_id, args = {})
+      (session[:segment_queue] ||= []) << [:alias, user_id, args]
+    end
   end
 
   module ActionControllerExtension
@@ -61,6 +83,7 @@ module EventTracker
       a = []
       registered_properties = session.delete(:registered_properties)
       event_tracker_queue = session.delete(:event_tracker_queue)
+      segment_queue = session.delete(:segment_queue)
 
       event_trackers.each do |tracker|
         if tracker.is_a?(EventTracker::Integration::Mixpanel)
@@ -93,6 +116,41 @@ module EventTracker
           if identity = respond_to?(:kissmetrics_identity, true) && kissmetrics_identity
             a << tracker.identify(identity)
           end
+        elsif tracker.is_a?(EventTracker::Integration::GoogleAnalytics)
+          active = false
+          add_transaction_queue = session.delete(:add_transaction_queue)
+          if add_transaction_queue.present?
+            active = true
+            add_transaction_queue.each do |id, affiliation, revenue, shipping, tax|
+              a << tracker.add_transaction(id, affiliation, revenue, shipping, tax)
+            end
+          end
+          add_item_queue = session.delete(:add_item_queue)
+          if add_item_queue.present?
+            active = true
+            add_item_queue.each do |id, name, sku, category, price, quantity|
+              a << tracker.add_item(id, name, sku, category, price, quantity)
+            end
+          end
+          a << %Q{ga('event_tracker.ecommerce:send');} if active
+        elsif tracker.is_a?(EventTracker::Integration::Segment)
+          if segment_queue.present?
+            puts 'Processing segment item'
+            segment_queue.each do |m, arg1, arg2, arg3, arg4|
+              if arg4.present?
+                a << tracker.send(m, arg1, arg2, arg3, arg4)
+              elsif arg3.present?
+                a << tracker.send(m, arg1, arg2, arg3)
+              elsif arg2.present?
+                a << tracker.send(m, arg1, arg2)
+              elsif arg1.present?
+                a << tracker.send(m, arg1)
+              else
+                a << tracker.send(m)
+              end
+            end
+          end
+
         end
 
         a << tracker.register(registered_properties) if registered_properties.present? && tracker.respond_to?(:register)
@@ -103,22 +161,6 @@ module EventTracker
           end
         end
       end
-
-      add_transaction_queue = session.delete(:add_transaction_queue)
-      if add_transaction_queue.present?
-        add_transaction_queue.each do |id, affiliation, revenue, shipping, tax|
-          a << google_analytics_tracker.add_transaction(id, affiliation, revenue, shipping, tax)
-      end
-      end
-
-      add_item_queue = session.delete(:add_item_queue)
-      if add_item_queue.present?
-        add_item_queue.each do |id, name, sku, category, price, quantity|
-          a << google_analytics_tracker.add_item(id, name, sku, category, price, quantity)
-        end
-      end
-
-      a << %Q{ga('event_tracker.ecommerce:send');} if google_analytics_tracker.present?
 
       body.insert body_insert_at, view_context.javascript_tag(a.join("\n"))
       response.body = body
