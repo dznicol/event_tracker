@@ -327,9 +327,23 @@ feature 'basic integration' do
     end
   end
 
+  context "segment page0" do
+    background { visit "/segment_page0" }
+    it { should include %Q{analytics.page();} }
+  end
+
+  class SegmentPage0Controller < ApplicationController
+    around_filter :append_event_tracking_tags
+
+    def index
+      segment_page
+      render inline: "OK", layout: true
+    end
+  end
+
   context "segment page1" do
     background { visit "/segment_page1" }
-    it { should include %Q{analytics.page("Pricing")} }
+    it { should include %Q{analytics.page("Pricing");} }
   end
 
   class SegmentPage2Controller < ApplicationController

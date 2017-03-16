@@ -27,7 +27,7 @@ class EventTracker::Integration::Segment < EventTracker::Integration::Base
     params += %Q{, #{embeddable_json(properties)}} if properties.present?
     params += %Q{, #{embeddable_json(options)}} if options.present?
 
-    params.present? ? %Q{analytics.page(#{params});} : %Q{analysis.page();}
+    params.present? ? %Q{analytics.page(#{params});} : %Q{analytics.page();}
   end
 
   def alias(user_id, options={})
