@@ -29,7 +29,7 @@ config.event_tracker.kissmetrics_key = "YOUR_KEY"
 config.event_tracker.google_analytics_key = "YOUR_KEY"
 
 class ApplicationController < ActionController::Base
-  around_filter :append_event_tracking_tags
+  around_action :append_event_tracking_tags
 
   # optionally identify users
   def mixpanel_distinct_id

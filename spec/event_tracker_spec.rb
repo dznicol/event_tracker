@@ -33,7 +33,7 @@ feature 'basic integration' do
   subject { page.find("body script", visible: false).native.content }
 
   class BasicController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
     def no_tracking
       render inline: "OK", layout: true
     end
@@ -72,7 +72,7 @@ feature 'basic integration' do
   end
 
   class RedirectsController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       track_event "Register for site"
@@ -90,7 +90,7 @@ feature 'basic integration' do
   end
 
   class WithPropertiesController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       register_properties age: 19
@@ -109,7 +109,7 @@ feature 'basic integration' do
   end
 
   class IdentityController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
     def mixpanel_distinct_id
       "distinct_id"
     end
@@ -129,7 +129,7 @@ feature 'basic integration' do
   end
 
   class NameTagController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
     def mixpanel_name_tag
       "foo@example.org"
     end
@@ -145,7 +145,7 @@ feature 'basic integration' do
   end
 
   class PrivateController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
     def index; render inline: "OK", layout: true; end
     private
     def mixpanel_distinct_id; "distinct_id"; end
@@ -158,7 +158,7 @@ feature 'basic integration' do
   end
 
   class SetConfigController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       mixpanel_set_config 'track_pageview' => false
@@ -172,7 +172,7 @@ feature 'basic integration' do
   end
 
   class PeopleSetController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       mixpanel_people_set "$email" => "jsmith@example.com"
@@ -186,7 +186,7 @@ feature 'basic integration' do
   end
 
   class PeopleSetOnceController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       mixpanel_people_set_once "One more time" => "With feeling"
@@ -200,7 +200,7 @@ feature 'basic integration' do
   end
 
   class PeopleIncrementController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       mixpanel_people_increment "Named Attribute"
@@ -214,7 +214,7 @@ feature 'basic integration' do
   end
 
   class AliasController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       mixpanel_alias "jsmith@example.com"
@@ -228,8 +228,8 @@ feature 'basic integration' do
   end
 
   class BeforeFilterController < ApplicationController
-    around_filter :append_event_tracking_tags
-    before_filter :halt_the_chain_and_render
+    around_action :append_event_tracking_tags
+    before_action :halt_the_chain_and_render
 
     def index
       render inline: "ORIGINAL", layout: true
@@ -241,8 +241,8 @@ feature 'basic integration' do
 
   end
 
-  context "halting filter chain in a before_filter" do
-    background { visit "/before_filter" }
+  context "halting filter chain in a before_action" do
+    background { visit "/before_action" }
     it_should_behave_like "init"
     it { expect(page.body).to_not include("ORIGINAL") }
     it { expect(page.body).to include("HALTED") }
@@ -263,7 +263,7 @@ feature 'basic integration' do
   # Segment Tests
   #
   class SegmentTrackController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_track 'Article Completed', title: 'How to Create a Tracking Plan', course: 'Intro to Analytics'
@@ -277,7 +277,7 @@ feature 'basic integration' do
   end
 
   class SegmentIdentify1Controller < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_identify nil, nickname: 'Amazing Grace', favoriteCompiler: 'A-0', industry: 'Computer Science'
@@ -291,7 +291,7 @@ feature 'basic integration' do
   end
 
   class SegmentIdentify2Controller < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_identify '12091906-01011992', name: 'Grace Hopper', email: 'grace@usnavy.gov'
@@ -305,7 +305,7 @@ feature 'basic integration' do
   end
 
   class SegmentGroupController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_group 'UNIVAC Working Group', principles: ['Eckert', 'Mauchly'], site: 'Eckert–Mauchly Computer Corporation', statedGoals: 'Develop the first commercial computer', industry: 'Technology'
@@ -319,7 +319,7 @@ feature 'basic integration' do
   end
 
   class SegmentPage1Controller < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_page nil, 'Pricing'
@@ -333,7 +333,7 @@ feature 'basic integration' do
   end
 
   class SegmentPage0Controller < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_page
@@ -347,7 +347,7 @@ feature 'basic integration' do
   end
 
   class SegmentPage2Controller < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_page nil, 'Pricing', {
@@ -365,7 +365,7 @@ feature 'basic integration' do
   end
 
   class SegmentGroupController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_group 'UNIVAC Working Group', {
@@ -384,7 +384,7 @@ feature 'basic integration' do
   end
 
   class SegmentAliasController < ApplicationController
-    around_filter :append_event_tracking_tags
+    around_action :append_event_tracking_tags
 
     def index
       segment_alias "507f191e81"
