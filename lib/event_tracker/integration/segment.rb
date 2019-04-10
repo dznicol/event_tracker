@@ -40,11 +40,18 @@ class EventTracker::Integration::Segment < EventTracker::Integration::Base
 
   private
   def func(m, arg1, options)
+    integrations = {}
+    if Rails.application.config.event_tracker.segment_integrations.present?
+      integrations = Rails.application.config.event_tracker.segment_integrations[m.to_sym]
+    end
+
+    integration_arg = integrations.present? ? ", #{embeddable_json(integrations)}" : ''
+
     if arg1.present?
       p = options.empty? ? '' : ", #{embeddable_json(options)}"
-      %Q{analytics.#{m}("#{arg1}"#{p});}
+      %Q{analytics.#{m}("#{arg1}"#{p}#{integration_arg});}
     else
-      %Q{analytics.#{m}(#{embeddable_json(options)});}
+      %Q{analytics.#{m}(#{embeddable_json(options)}#{integration_arg});}
     end
   end
 end
