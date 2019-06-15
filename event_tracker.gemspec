@@ -15,7 +15,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = EventTracker::VERSION
 
-  gem.add_dependency 'rails', '>= 3.0'
   gem.add_development_dependency 'capybara', '>= 2.1'
   gem.add_development_dependency 'rspec-rails'
 end
